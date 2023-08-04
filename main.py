@@ -1,12 +1,12 @@
 from ChatClient import ChatClient
 from utilities import *
 import getpass
-import logging
+# import logging
 import asyncio
 
-# logging.basicConfig(level=logging.DEBUG, format='%(levelname)-8s %(message)s')
 
 def starter():
+    # logging.basicConfig(level=logging.DEBUG, format='%(levelname)-8s %(message)s')
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     option = 0
     while option != "3":
@@ -16,26 +16,26 @@ def starter():
         option = input("Ingrese una opción: ")
         client = None
         if option == '1':
-            print("Iniciando sesión con una cuenta registrada")
+            print("\nIniciando sesión con una cuenta registrada\n")
             jid = input("Ingrese su JID: ")
             password = getpass.getpass("Ingrese su contraseña: ")
             client = ChatClient(jid, password)
             client.connect(disable_starttls=True)
             client.process(forever=False)
         elif option == '2':
-            print("Registrando una nueva cuenta")
+            print("\nRegistrando una nueva cuenta\n")
             jid = input("Ingrese su JID: ")
             password = input("Ingrese su contraseña: ")
             #password = getpass.getpass("Ingrese su contraseña: ")
-            online = register(jid, password)
-            if online:
-                print("Registro exitoso")
+            registered = register(jid, password)
+            if registered:
+                print("\nRegistro exitoso\n")
             else:
-                print("No se pudo registrar la cuenta")
+                print("\nNo se pudo registrar la cuenta\n")
         elif option == '3':
-            print("Cerrando aplicación")    
+            print("\nCerrando aplicación\n")    
         else:
-            print("Opción inválida")
+            print("\nOpción inválida\n")
 
 starter()
 

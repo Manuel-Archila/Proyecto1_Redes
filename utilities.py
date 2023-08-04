@@ -8,8 +8,8 @@ def menu():
     print("5. Enviar un mensaje grupal")
     print("6. Definir mensaje de presencia")
     print("7. Enviar un archivo")
-    print("8. Cerrar sesión")
-    print("9. Eliminar cuenta")
+    print("8. Eliminar cuenta")   
+    print("9. Cerrar sesión")
 
 def register(client, password):
         jid = xmpp.JID(client)
