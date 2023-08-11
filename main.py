@@ -18,6 +18,7 @@ def starter():
         if option == '1':
             print("\nIniciando sesión con una cuenta registrada\n")
             jid = input("Ingrese su JID: ")
+            jid = jid + "@alumchat.xyz"
             password = getpass.getpass("Ingrese su contraseña: ")
             client = ChatClient(jid, password)
             client.connect(disable_starttls=True)
@@ -25,6 +26,7 @@ def starter():
         elif option == '2':
             print("\nRegistrando una nueva cuenta\n")
             jid = input("Ingrese su JID: ")
+            jid = jid + "@alumchat.xyz"
             password = input("Ingrese su contraseña: ")
             #password = getpass.getpass("Ingrese su contraseña: ")
             registered = register(jid, password)
