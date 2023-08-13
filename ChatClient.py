@@ -13,7 +13,14 @@ class ChatClient(slixmpp.ClientXMPP):
         self.connected = False
         self.user = jid.split("@")[0]
         self.add_event_handler("session_start", self.start)
+        self.add_event_handler("subscription_request", self.subscription)
+        self.add_event_handler("changed_status", self.changed_status)
+        self.add_event_handler("groupchat_invite", self.group_invite)
         self.add_event_handler("message", self.message)
+        self.register_plugin('xep_0004') # Data forms
+        self.register_plugin('xep_0045') # Multi-User Chat
+        self.register_plugin('xep_0030') # Service Discovery
+
 
     async def start(self, event):
         try:
@@ -24,12 +31,58 @@ class ChatClient(slixmpp.ClientXMPP):
             asyncio.create_task(self.main_menu())
         except IqError as err:
             self.connected = False
-            print(f"Error: {err.iq['error']['text']}")
+            print(f"Error: {err}")
             self.disconnect()
         except IqTimeout:
             self.connected = False
             print('Error: El servidor no respondio a tiempo')
             self.disconnect()
+    
+    async def subscription(self, event):
+        try:
+            if event['type'] == 'subscribe':
+                self.send_presence(pto=event['from'], ptype='subscribed')
+                await self.get_roster()
+        except IqError as err:
+            self.connected = False
+            print(f"Error: {err}")
+            self.disconnect()
+        except IqTimeout:
+            self.connected = False
+            print('Error: El servidor no respondio a tiempo')
+            self.disconnect()
+    
+    async def group_invite(self, event):
+        group = event['from']
+        self.plugin['xep_0045'].join_muc(group, self.boundjid.user)
+        print(f"\nSe ha unido al grupo {group}\n")
+
+    
+    async def changed_status(self, event):
+        try:
+            if event['from'].bare != self.boundjid.bare and "conference" not in event["from"].domain:
+                if event["type"] == "unvailable":
+                    print(f"\n{event['from']} se ha desconectado\n")
+                else:
+                    estado = event['show']
+                    if estado == 'dnd':
+                        estado = 'Ocupado'
+                    elif estado == 'xa':
+                        estado = 'No disponible'
+                    elif estado == 'away':
+                        estado = 'Ausente'
+                    else:
+                        estado = 'Disponible'
+                    print(f"\n{event['from'].bare} a cambiado su estado a {estado}\n")
+        except IqError as err:
+            self.connected = False
+            print(f"Error: {err}")
+            self.disconnect()
+        except IqTimeout:
+            self.connected = False
+            print('Error: El servidor no respondio a tiempo')
+            self.disconnect()
+
         
     async def get_contacts(self):
         contacts = []
@@ -62,7 +115,7 @@ class ChatClient(slixmpp.ClientXMPP):
             print("Solicitud de amistad enviada")
             await self.get_roster()
         except IqError as err:
-            print(f"Error: {err.iq['error']['text']}")
+            print(f"Error: {err}")
         except IqTimeout:
             print('Error: El servidor no respondio a tiempo')
 
@@ -103,9 +156,56 @@ class ChatClient(slixmpp.ClientXMPP):
                 self.send_message(mto=jid, mbody=msg, mtype='chat')
                 print("Mensaje enviado")
     
-    async def send_group_message(self, jid):
-        pass
+    async def create_lobby(self, lobby_name):
+        try:
+            self.plugin['xep_0045'].join_muc(lobby_name, self.boundjid.bare)
 
+            await asyncio.sleep(1)
+            new_form = self.plugin['xep_0004'].make_form(ftype='submit')
+
+            new_form['muc#roomconfig_roomname'] = lobby_name
+            new_form['muc#roomconfig_persistentroom'] = '1'
+            new_form['muc#roomconfig_publicroom'] = '1'
+            new_form['muc#roomconfig_membersonly'] = '0'
+            new_form['muc#roomconfig_allowinvites'] = '0'
+            new_form['muc#roomconfig_enablelogging'] = '1'
+            new_form['muc#roomconfig_changesubject'] = '1'
+            new_form['muc#roomconfig_maxusers'] = '100'
+            new_form['muc#roomconfig_whois'] = 'anyone'
+            new_form['muc#roomconfig_roomdesc'] = 'Chat room'
+            new_form['muc#roomconfig_roomowners'] = [self.boundjid.bare]
+
+            await self.plugin['xep_0045'].set_room_config(lobby_name, config=new_form)
+
+            print("\nChat de grupo", lobby_name, "creado correctamente\n")
+
+            open_invite = True
+            while open_invite:
+                invite = await ainput("Ingrese el nombre de usuario que desea invitar: ")
+                full_invite = invite + "@alumchat.xyz"
+                room_name = lobby_name + "@conference.alumchat.xyz"
+                await self.plugin['xep_0045'].invite(room= room_name, jid=full_invite, reason="Invitación a chat de grupo")
+                print("Se ha enviado una invitación a", invite, "para unirse al grupo.")
+                invite_more = await ainput("¿Desea invitar a alguien más? (y/n): ")
+                if invite_more == "n":
+                    open_invite = False
+                
+
+        except IqError as err:
+            print(f"Error: {err}")
+        except IqTimeout:
+            print('Error: El servidor no respondio a tiempo')
+
+    async def send_group_message(self, lobby_name):
+        in_ = True
+        while in_:
+            msg = await ainput("Ingrese el mensaje que desea enviar: ")
+            if msg == "out":
+                in_ = False
+            else:
+                self.send_message(mto=lobby_name, mbody=msg, mtype='groupchat')
+                print("Mensaje enviado")
+    
     async def send_new_presence(self, status, message):
         self.send_presence(pshow=status, pstatus=message)
     
@@ -120,7 +220,6 @@ class ChatClient(slixmpp.ClientXMPP):
 
         try:
             self.send_raw(delete_stanza_str)
-            # Enviar la stanza y esperar una respuesta
             print("Cuenta borrada exitosamente")
             self.connected = False
             self.disconnect()
@@ -147,6 +246,7 @@ class ChatClient(slixmpp.ClientXMPP):
                     print("Usuario", contact[0])
                     print("Estado:", contact[1])
                     print("Mensaje de estado:", contact[2])
+                    print()
             
             elif option == "2":
                 print("\nAgregar a un usuario\n")
@@ -163,6 +263,7 @@ class ChatClient(slixmpp.ClientXMPP):
                     print("Usuario", contact[0])
                     print("Estado:", contact[1])
                     print("Mensaje de estado:", contact[2])
+                    print()
 
             
             elif option == "4":
@@ -172,8 +273,29 @@ class ChatClient(slixmpp.ClientXMPP):
                 await self.send_individual_message(jid)
 
             elif option == "5":
-                print("\nEnviar un mensaje grupal\n")
-                #Pendientes gato
+                print("\nMenu de grupos\n")
+                in_group_menu = True
+                while in_group_menu:
+                    print("1. Crear un grupo")
+                    print("2. Unirse a un grupo existente")
+                    print("3. Salir del menu de grupos")
+                    new_option = input("Ingrese una opción: ")
+                    if new_option == "1":
+                        print("\nCrear un grupo\n")
+                        lobby_name = input("Ingrese el nombre del grupo: ")
+                        lobby_name = lobby_name + "@conference.alumchat.xyz"
+                        await self.create_lobby(lobby_name)
+                    elif new_option == "2":
+                        print("\nUnirse a un grupo existente\n")
+                        lobby_name = input("Ingrese el nombre del grupo al que desea unirse: ")
+                        lobby_name = lobby_name + "@conference.alumchat.xyz"
+                        await self.send_group_message(lobby_name)
+                        
+                    elif new_option == "3":
+                        print("\nSalir del menu de grupos\n")
+                        in_group_menu = False
+                    else:
+                        print("Opción inválida")
 
             elif option == "6":
                 print("\nDefinir mensaje de presencia\n")
