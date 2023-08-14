@@ -160,14 +160,13 @@ class ChatClient(slixmpp.ClientXMPP):
         try:
             self.plugin['xep_0045'].join_muc(lobby_name, self.boundjid.bare)
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
             new_form = self.plugin['xep_0004'].make_form(ftype='submit')
-
             new_form['muc#roomconfig_roomname'] = lobby_name
             new_form['muc#roomconfig_persistentroom'] = '1'
             new_form['muc#roomconfig_publicroom'] = '1'
             new_form['muc#roomconfig_membersonly'] = '0'
-            new_form['muc#roomconfig_allowinvites'] = '0'
+            new_form['muc#roomconfig_allowinvites'] = '1'
             new_form['muc#roomconfig_enablelogging'] = '1'
             new_form['muc#roomconfig_changesubject'] = '1'
             new_form['muc#roomconfig_maxusers'] = '100'
@@ -183,9 +182,8 @@ class ChatClient(slixmpp.ClientXMPP):
             while open_invite:
                 invite = await ainput("Ingrese el nombre de usuario que desea invitar: ")
                 full_invite = invite + "@alumchat.xyz"
-                room_name = lobby_name + "@conference.alumchat.xyz"
-                await self.plugin['xep_0045'].invite(room= room_name, jid=full_invite, reason="Invitación a chat de grupo")
-                print("Se ha enviado una invitación a", invite, "para unirse al grupo.")
+                self.plugin['xep_0045'].invite(room= lobby_name, jid=full_invite, reason="Invitación a chat de grupo")
+                await aprint("Se ha enviado una invitación a", invite, "para unirse al grupo.")
                 invite_more = await ainput("¿Desea invitar a alguien más? (y/n): ")
                 if invite_more == "n":
                     open_invite = False
@@ -233,6 +231,12 @@ class ChatClient(slixmpp.ClientXMPP):
     async def message(self, msg):
         if msg['type'] in ('chat', 'normal'):
             print(f"Nuevo mensaje de {msg['from']}: {msg['body']}")
+        
+        if msg['type'] == 'groupchat':
+            grupo = msg['from'].bare
+            emisor = msg['from'].resource
+            if emisor != self.boundjid.user:
+                print(f"Nuevo mensaje en el grupo {grupo} de {emisor}: {msg['body']}")
     
     async def main_menu(self):
         while self.connected == True:
