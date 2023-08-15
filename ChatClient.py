@@ -1,10 +1,10 @@
 import slixmpp
-import logging
 from slixmpp.exceptions import IqError, IqTimeout
 from utilities import *
 import asyncio
 from aioconsole import ainput
 from aioconsole.stream import aprint
+import base64
 
 class ChatClient(slixmpp.ClientXMPP):
 
@@ -187,8 +187,6 @@ class ChatClient(slixmpp.ClientXMPP):
                 invite_more = await ainput("¿Desea invitar a alguien más? (y/n): ")
                 if invite_more == "n":
                     open_invite = False
-                
-
         except IqError as err:
             print(f"Error: {err}")
         except IqTimeout:
@@ -230,13 +228,32 @@ class ChatClient(slixmpp.ClientXMPP):
         
     async def message(self, msg):
         if msg['type'] in ('chat', 'normal'):
-            print(f"Nuevo mensaje de {msg['from']}: {msg['body']}")
+            if "file|" in msg['body']:
+                body = msg['body'].split("|")
+                file_extension = body[1]
+                file_data_base64 = body[2]
+                file_data = base64.b64decode(file_data_base64.encode('utf-8'))
+                filename = "received_file." + file_extension
+                with open(filename, 'wb') as file:
+                    file.write(file_data)
+                print(f"Nuevo archivo recibido de {msg['from']}")
+            else:
+                print(f"Nuevo mensaje de {msg['from']}: {msg['body']}")
         
         if msg['type'] == 'groupchat':
             grupo = msg['from'].bare
             emisor = msg['from'].resource
             if emisor != self.boundjid.user:
                 print(f"Nuevo mensaje en el grupo {grupo} de {emisor}: {msg['body']}")
+    
+    async def send_file(self, jid, filename):
+        file_extension = filename.split('.')[-1]
+        with open(filename, 'rb') as file:
+            file_data = file.read()
+            file_data_base64 = base64.b64encode(file_data).decode('utf-8')
+            message = "file|" + file_extension + "|" + file_data_base64
+            self.send_message(mto=jid, mbody=message, mtype='chat')
+        print(f"File '{filename}' enviado a {jid}")
     
     async def main_menu(self):
         while self.connected == True:
