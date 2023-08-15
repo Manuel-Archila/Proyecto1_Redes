@@ -238,12 +238,12 @@ class ChatClient(slixmpp.ClientXMPP):
                     file.write(file_data)
                 print(f"Nuevo archivo recibido de {msg['from']}")
             else:
-                print(f"Nuevo mensaje de {msg['from']}: {msg['body']}")
+                print(f"Nuevo mensaje de {msg['from'].bare}: {msg['body']}")
         
         if msg['type'] == 'groupchat':
             grupo = msg['from'].bare
             emisor = msg['from'].resource
-            if emisor != self.boundjid.user:
+            if emisor != self.boundjid.bare:
                 print(f"Nuevo mensaje en el grupo {grupo} de {emisor}: {msg['body']}")
     
     async def send_file(self, jid, filename):
