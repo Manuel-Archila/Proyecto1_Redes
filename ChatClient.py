@@ -61,8 +61,8 @@ class ChatClient(slixmpp.ClientXMPP):
     async def changed_status(self, event):
         try:
             if event['from'].bare != self.boundjid.bare and "conference" not in event["from"].domain:
-                if event["type"] == "unvailable":
-                    print(f"\n{event['from']} se ha desconectado\n")
+                if event["type"] == "unavailable":
+                    print(f"\n{event['from'].bare} se ha desconectado\n")
                 else:
                     estado = event['show']
                     if estado == 'dnd':
@@ -350,6 +350,10 @@ class ChatClient(slixmpp.ClientXMPP):
 
             elif option == "7":
                 print("\nEnviar un archivo\n")
+                jid = input("Ingrese el JID del usuario: ")
+                jid = jid + "@alumchat.xyz"
+                filename = input("Ingrese el nombre del archivo: ")
+                await self.send_file(jid, filename)
             
             elif option == "8":
                 print("\nEliminar cuenta\n")
