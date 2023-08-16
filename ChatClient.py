@@ -7,11 +7,10 @@ from aioconsole.stream import aprint
 import base64
 
 class ChatClient(slixmpp.ClientXMPP):
-
+    # Constructor del cliente de chat con las propiedades y plugins necesarios
     def __init__(self, jid, password):
         super().__init__(jid, password)
         self.connected = False
-        self.user = jid.split("@")[0]
         self.add_event_handler("session_start", self.start)
         self.add_event_handler("subscription_request", self.subscription)
         self.add_event_handler("changed_status", self.changed_status)
@@ -21,7 +20,7 @@ class ChatClient(slixmpp.ClientXMPP):
         self.register_plugin('xep_0045') # Multi-User Chat
         self.register_plugin('xep_0030') # Service Discovery
 
-
+    # Funcion que se ejecuta al iniciar sesion
     async def start(self, event):
         try:
             self.send_presence()
@@ -37,7 +36,7 @@ class ChatClient(slixmpp.ClientXMPP):
             self.connected = False
             print('Error: El servidor no respondio a tiempo')
             self.disconnect()
-    
+    # Funcion que se ejecuta al recibir una solicitud de amistad
     async def subscription(self, event):
         try:
             if event['type'] == 'subscribe':
@@ -51,13 +50,13 @@ class ChatClient(slixmpp.ClientXMPP):
             self.connected = False
             print('Error: El servidor no respondio a tiempo')
             self.disconnect()
-    
+    # Funcion que se ejecuta al recibir una invitacion a un grupo
     async def group_invite(self, event):
         group = event['from']
         self.plugin['xep_0045'].join_muc(group, self.boundjid.user)
         print(f"\nSe ha unido al grupo {group}\n")
 
-    
+    # Funcion que se ejecuta al cambiar el estado de un usuario
     async def changed_status(self, event):
         try:
             if event['from'].bare != self.boundjid.bare and "conference" not in event["from"].domain:
@@ -83,14 +82,14 @@ class ChatClient(slixmpp.ClientXMPP):
             print('Error: El servidor no respondio a tiempo')
             self.disconnect()
 
-        
+    # Funcion que se ejecuta para obtener la lista de contactos  
     async def get_contacts(self):
         contacts = []
         for jid in self.client_roster.keys():
             presence = self.client_roster.presence(jid)
             status = "Desconectado"
             status_message = ""
-            if jid != self.user:
+            if jid != self.boundjid.bare:
                 for _, pres in presence.items():
                     if pres:
                         status = pres['show']
@@ -109,6 +108,7 @@ class ChatClient(slixmpp.ClientXMPP):
                     contacts.append((jid, status, status_message))
         return contacts
 
+    # Funcion que se ejecuta para agregar un usuario a la lista de contactos
     async def add_user(self, jid):
         try:
             self.send_presence_subscription(pto=jid)
@@ -119,6 +119,7 @@ class ChatClient(slixmpp.ClientXMPP):
         except IqTimeout:
             print('Error: El servidor no respondio a tiempo')
 
+    # Funcion que se ejecuta para obtener la informacion de un usuario
     async def get_user_info(self, jid):
         contacts = []
         if jid in self.client_roster.keys():
@@ -145,6 +146,7 @@ class ChatClient(slixmpp.ClientXMPP):
           
         return contacts
 
+    # Funcion que se ejecuta para enviar un mensaje a un usuario
     async def send_individual_message(self, jid):
         in_ = True
 
@@ -156,6 +158,7 @@ class ChatClient(slixmpp.ClientXMPP):
                 self.send_message(mto=jid, mbody=msg, mtype='chat')
                 print("Mensaje enviado")
     
+    # Funcion que se ejecuta para crear un grupo
     async def create_lobby(self, lobby_name):
         try:
             self.plugin['xep_0045'].join_muc(lobby_name, self.boundjid.bare)
@@ -192,6 +195,7 @@ class ChatClient(slixmpp.ClientXMPP):
         except IqTimeout:
             print('Error: El servidor no respondio a tiempo')
 
+    # Funcion que se ejecuta para enviar un mensaje a un grupo
     async def send_group_message(self, lobby_name):
         in_ = True
         while in_:
@@ -202,14 +206,16 @@ class ChatClient(slixmpp.ClientXMPP):
                 self.send_message(mto=lobby_name, mbody=msg, mtype='groupchat')
                 print("Mensaje enviado")
     
+    # Funcion que se ejecuta para cambiar el mesaje y estado de presencia
     async def send_new_presence(self, status, message):
         self.send_presence(pshow=status, pstatus=message)
     
+    # Funcion que se ejecuta para eliminar una cuenta
     async def delete_account(self):
         delete_stanza_str = f"""
             <iq type="set" id="delete-account">
             <query xmlns="jabber:iq:register">
-                <remove jid="{self.user}"/>
+                <remove jid="{self.boundjid.bare}"/>
             </query>
             </iq>
         """
@@ -225,9 +231,15 @@ class ChatClient(slixmpp.ClientXMPP):
         except IqTimeout:
             print('Error: El servidor no respondio a tiempo')
             self.disconnect()
-        
+        except Exception as e:
+            print(e)
+            self.disconnect()
+
+    # Funcion que se ejecuta al recibir un mensaje    
     async def message(self, msg):
+        # Si el mensaje es de tipo chat o normal
         if msg['type'] in ('chat', 'normal'):
+            # Si el mensaje es un archivo
             if "file|" in msg['body']:
                 body = msg['body'].split("|")
                 file_extension = body[1]
@@ -240,12 +252,14 @@ class ChatClient(slixmpp.ClientXMPP):
             else:
                 print(f"Nuevo mensaje de {msg['from'].bare}: {msg['body']}")
         
+        # Si el mensaje es de tipo grupo
         if msg['type'] == 'groupchat':
             grupo = msg['from'].bare
             emisor = msg['from'].resource
             if emisor != self.boundjid.bare:
                 print(f"Nuevo mensaje en el grupo {grupo} de {emisor}: {msg['body']}")
     
+    # Funcion que se ejecuta para enviar un archivo
     async def send_file(self, jid, filename):
         file_extension = filename.split('.')[-1]
         with open(filename, 'rb') as file:
@@ -255,6 +269,7 @@ class ChatClient(slixmpp.ClientXMPP):
             self.send_message(mto=jid, mbody=message, mtype='chat')
         print(f"File '{filename}' enviado a {jid}")
     
+    # Funcion que se ejecuta para mostrar el menu principal
     async def main_menu(self):
         while self.connected == True:
             menu()
