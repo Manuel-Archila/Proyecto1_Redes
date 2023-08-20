@@ -23,3 +23,4 @@ def register(client, password):
                 'password': password
         }))
 
+
