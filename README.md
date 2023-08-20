@@ -1,9 +1,6 @@
 
 # **Project 1**: Leveraging an Existing Protocol
 
-
-*Harness the power of the XMPP protocol in a sleek messaging client.*
-
 ## **Overview**
 Dive into this project to explore a fully-featured messaging client that's built on the robust XMPP protocol. Whether it's one-on-one conversations, group chats, or file transfers, this client has got you covered.
 
