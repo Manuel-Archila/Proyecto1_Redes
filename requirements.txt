@@ -1,0 +1,4 @@
+slixmpp == 1.8.4
+xmpppy == 0.7.1
+aioconsole == 0.6.2
+asyncio == 3.4.3
