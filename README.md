@@ -1,36 +1,53 @@
-# Proyecto 1 Redes - Uso de un protocolo existente
 
-## Descripcion
-Este proyecto consiste en la implementacion de un cliente de mensajeria que utiliza el protocolo XMPP.
+# **Project 1 - Networking**: Leveraging an Existing Protocol
 
-## Instalacion
-1. Clonar el repositorio: `git clone https://github.com/Manuel-Archila/Proyecto1_Redes.git`
-2. Acceder a la carpeta: `cd Proyecto1_Redes`
-3. Instalar dependencias: `pip install -r requirements.txt`
-4. Correr el programa: `python main.py`
 
-## Realizado en:
-- Python 3.11.4
+*Harness the power of the XMPP protocol in a sleek messaging client.*
 
-## Librerias utilizadas:
-- Xmpppy
-- Slixmpp
-- Asyncio
-- Aioconsole
+## **Overview**
+Dive into this project to explore a fully-featured messaging client that's built on the robust XMPP protocol. Whether it's one-on-one conversations, group chats, or file transfers, this client has got you covered.
 
-## Funcionalidades:
-- Registro de usuario
-- Inicio de sesion
-- Listar contactos conectados
-- Agregar nuevos contactos
-- Mostrar detalles de contacto
-- Envio de mensajes a usuarios
-- Creacion de grupos
-- Envio de mensajes a grupos
-- Cambiar estado y mensaje de estado
-- Envio de archivos
-- Eliminar una cuenta
-- Salir de sesion
+## **Quick Start**
+1. **Clone the Repository**: 
+   ```bash
+   git clone https://github.com/Manuel-Archila/Proyecto1_Redes.git
+   ```
+2. **Navigate to Directory**: 
+   ```bash
+   cd Proyecto1_Redes
+   ```
+3. **Install Dependencies**: 
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. **Launch the Program**: 
+   ```bash
+   python main.py
+   ```
 
-## Autor:
-- Manuel Archila - 161250
+## **Tech Stack**
+- **Language**: Python 3.11.4
+- **Key Libraries**:
+  - Xmpppy
+  - Slixmpp
+  - Asyncio
+  - Aioconsole
+
+## **Features**
+- User Registration
+- User Login
+- List Online Contacts
+- Add New Contacts
+- View Contact Details
+- Send Messages to Users
+- Create Chat Groups
+- Send Group Messages
+- Update Status & Status Messages
+- File Transfers
+- Account Deletion
+- Log Out
+
+## **About the Developer**
+- **Manuel Archila** 
+  - Student ID: 161250
+  - [GitHub Profile](https://github.com/Manuel-Archila)
