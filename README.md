@@ -1,5 +1,5 @@
 
-# **Project 1 - Networking**: Leveraging an Existing Protocol
+# **Project 1**: Leveraging an Existing Protocol
 
 
 *Harness the power of the XMPP protocol in a sleek messaging client.*
